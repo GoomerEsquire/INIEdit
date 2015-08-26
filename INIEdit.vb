@@ -2,7 +2,7 @@
 
 Public Class INIFile
 
-	Public Class Group
+	Protected Class Group
 
 		Protected keyArray As Key() = {}
 		Protected n As String
@@ -25,7 +25,7 @@ Public Class INIFile
 
 			For i As Integer = 0 To keyArray.Count - 1
 				If keyArray(i) Is Nothing Then
-					empty = i
+					If empty = -1 Then empty = i
 					Continue For
 				End If
 				If LCase(keyArray(i).Name) = lname Then keyObj = keyArray(i)
@@ -48,11 +48,13 @@ Public Class INIFile
 		Public Function GetKeys() As Key()
 
 			Dim newArray As Key() = {}
+
 			For Each k As Key In keyArray
 				If k Is Nothing Then Continue For
 				Array.Resize(newArray, newArray.Count + 1)
 				newArray(newArray.Count - 1) = k
 			Next
+
 			Return newArray
 
 		End Function
@@ -60,6 +62,7 @@ Public Class INIFile
 		Public Sub RemoveKey(name As String)
 
 			name = LCase(name)
+
 			For i As Integer = 0 To keyArray.Count - 1
 				If keyArray(i) Is Nothing Then Continue For
 				If LCase(keyArray(i).Name) = name Then
@@ -72,12 +75,12 @@ Public Class INIFile
 
 	End Class
 
-	Public Class Key
+	Protected Class Key
 
-		Protected n, v As String
+		Protected n As String
+		Protected v As String = String.Empty
 		Sub New(name As String)
 			n = name
-			v = String.Empty
 		End Sub
 
 		Public ReadOnly Property Name As String
@@ -98,9 +101,10 @@ Public Class INIFile
 	End Class
 
 	Protected curPath As String
-	Protected groupArray As Group()
-	Protected autoFlush As Boolean
-	Protected enc As System.Text.Encoding
+	Protected groupArray As Group() = {}
+	Protected autoFlush As Boolean = False
+	Protected enc As System.Text.Encoding = System.Text.Encoding.UTF8
+
 	''' <summary>
 	''' Creates a new INIFile object.
 	''' </summary>
@@ -108,9 +112,6 @@ Public Class INIFile
 	''' <remarks></remarks>
 	Public Sub New(path As String)
 		curPath = path
-		groupArray = {}
-		autoFlush = False
-		enc = System.Text.Encoding.UTF8
 	End Sub
 
 	Private Function isGroup(Line As String) As Boolean
@@ -127,6 +128,7 @@ Public Class INIFile
 		If Line.Length > 2 AndAlso isGroup(Line) Then
 			Return Line.Substring(1, Line.Length - 2)
 		End If
+
 		Return Nothing
 
 	End Function
@@ -136,9 +138,9 @@ Public Class INIFile
 		Dim groupObj As Group = Nothing
 		Dim lName As String = LCase(Name)
 
-		For Each g As Group In groupArray
-			If LCase(g.Name) = lName Then
-				Return g
+		For Each grp As Group In groupArray
+			If LCase(grp.Name) = lName Then
+				Return grp
 			End If
 		Next
 
@@ -155,12 +157,17 @@ Public Class INIFile
 	Private Function toINI() As String
 
 		Dim NewConfingString As String = ""
+		Dim first As Boolean = True
 
-		For Each g As Group In groupArray
-			Dim keys As Key() = g.GetKeys
+		For Each grp As Group In groupArray
+			Dim keys As Key() = grp.GetKeys
 			If keys.Count = 0 Then Continue For
-			If Array.IndexOf(groupArray, g) > 0 Then NewConfingString += vbCrLf
-			NewConfingString += "[" + g.Name + "]" + vbCrLf
+			If Not first Then
+				NewConfingString += vbCrLf
+			Else
+				first = False
+			End If
+			NewConfingString += "[" + grp.Name + "]" + vbCrLf
 			For Each k As Key In keys
 				NewConfingString += k.Name + "=" + k.Value + vbCrLf
 			Next
@@ -269,8 +276,8 @@ Public Class INIFile
 		End If
 
 		Dim newArray As String() = {}
-
 		Dim groupObj As Group = GetGroup(Group)
+
 		If Not groupObj Is Nothing Then
 			For Each k As Key In groupObj.GetKeys
 				Array.Resize(newArray, newArray.Count + 1)
@@ -308,12 +315,14 @@ Public Class INIFile
 		End If
 
 		Dim groupObj As Group = GetGroup(Group)
+
 		If Not groupObj Is Nothing Then
 			Dim keyObj As Key = groupObj.GetKey(KeyName)
 			If Not keyObj Is Nothing Then
 				Return keyObj.Value
 			End If
 		End If
+
 		Return DefaultValue
 
 	End Function
@@ -372,6 +381,7 @@ Public Class INIFile
 		End If
 
 		Dim groupObj As Group = GetGroup(Group)
+
 		If Not groupObj Is Nothing Then
 			groupObj.RemoveKey(KeyName)
 			If AutoSave Then Save()
@@ -414,7 +424,7 @@ Public Class INIFile
 	End Function
 
 	''' <summary>
-	''' Deletes the INI-file from the hard drive.
+	''' Deletes the associated INI-File from the hard drive.
 	''' </summary>
 	''' <remarks></remarks>
 	Public Sub Delete()
@@ -428,9 +438,9 @@ Public Class INIFile
 	End Sub
 
 	''' <summary>
-	''' Saves the INI-File to the hard drive after every change. Default is False.
+	''' Gets or sets whether the data will be written to the hard drive after every change. Default is False.
 	''' </summary>
-	''' <remarks>Turning this on impacts performance significantly.</remarks>
+	''' <remarks>Turning this on will impact performance significantly.</remarks>
 	Public Property AutoSave As Boolean
 
 		Get
@@ -443,7 +453,7 @@ Public Class INIFile
 	End Property
 
 	''' <summary>
-	''' Gets or sets the encoding of an INIFile object.
+	''' Gets or sets the encoding of the INIFile object.
 	''' </summary>
 	''' <value>A system.text.encoding object.</value>
 	''' <returns>A system.text.encoding object.</returns>
