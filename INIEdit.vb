@@ -28,7 +28,10 @@ Public Class INIFile
 					If empty = -1 Then empty = i
 					Continue For
 				End If
-				If LCase(keyArray(i).Name) = lname Then keyObj = keyArray(i)
+				If LCase(keyArray(i).Name) = lname Then
+					keyObj = keyArray(i)
+					Exit For
+				End If
 			Next
 
 			If create AndAlso keyObj Is Nothing Then
