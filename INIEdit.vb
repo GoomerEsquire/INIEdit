@@ -189,13 +189,9 @@ Public Class INIFile
 		Dim confFile As String = ""
 		Dim curGroup As String = ""
 
-		Try
-			If File.Exists(curPath) Then
-				confFile = File.ReadAllText(curPath, enc)
-			End If
-		Catch
-			groupArray = {}
-		End Try
+		If File.Exists(curPath) Then
+			confFile = File.ReadAllText(curPath, enc)
+		End If
 
 		For Each ConfLine As String In Split(confFile, vbCrLf)
 			If ConfLine.Length = 0 Then Continue For
@@ -208,9 +204,7 @@ Public Class INIFile
 			End If
 			Dim StrArray As String() = Split(ConfLine, "=")
 			If StrArray.Count >= 2 Then
-				Dim groupObj As Group = GetGroup(curGroup, True)
-				Dim keyObj As Key = groupObj.GetKey(StrArray(0), True)
-				keyObj.Value = String.Join("=", StrArray, 1, StrArray.Count - 1)
+				GetGroup(curGroup, True).GetKey(StrArray(0), True).Value = String.Join("=", StrArray, 1, StrArray.Count - 1)
 			End If
 		Next
 
@@ -273,11 +267,6 @@ Public Class INIFile
 			Exit Function
 		End If
 
-		If Group Like "*=*" Then
-			Throw New FormatException("Group string cannot contain equal-characters!")
-			Exit Function
-		End If
-
 		Dim newArray As String() = {}
 		Dim groupObj As Group = GetGroup(Group)
 
@@ -307,18 +296,12 @@ Public Class INIFile
 			Exit Function
 		End If
 
-		If Group Like "*=*" Then
-			Throw New FormatException("Group string cannot contain equal-characters!")
-			Exit Function
-		End If
-
 		If KeyName = Nothing OrElse KeyName.Length = 0 Then
 			Throw New NullReferenceException("Key string cannot be null or empty!")
 			Exit Function
 		End If
 
 		Dim groupObj As Group = GetGroup(Group)
-
 		If Not groupObj Is Nothing Then
 			Dim keyObj As Key = groupObj.GetKey(KeyName)
 			If Not keyObj Is Nothing Then
@@ -344,11 +327,6 @@ Public Class INIFile
 			Exit Sub
 		End If
 
-		If Group Like "*=*" Then
-			Throw New FormatException("Group string cannot contain equal-characters!")
-			Exit Sub
-		End If
-
 		If KeyName = Nothing OrElse KeyName.Length = 0 Then
 			Throw New NullReferenceException("Key string cannot be null or empty!")
 			Exit Sub
@@ -370,11 +348,6 @@ Public Class INIFile
 
 		If Group = Nothing OrElse Group.Length = 0 Then
 			Throw New NullReferenceException("Group string cannot be null or empty!")
-			Exit Sub
-		End If
-
-		If Group Like "*=*" Then
-			Throw New FormatException("Group string cannot contain equal-characters!")
 			Exit Sub
 		End If
 
@@ -409,22 +382,16 @@ Public Class INIFile
 	''' <summary>
 	''' Writes the data of the INIFile object to the hard drive.
 	''' </summary>
-	''' <returns>Returns true if the process was successful, otherwise false.</returns>
 	''' <remarks></remarks>
-	Public Function Save() As Boolean
+	Public Sub Save()
 
 		If curPath.Length = 0 Then
 			Throw New NullReferenceException("Cannot save file without filepath!")
 		End If
 
-		Try
-			File.WriteAllText(curPath, toINI, enc)
-			Return True
-		Catch
-			Return False
-		End Try
+		File.WriteAllText(curPath, toINI, enc)
 
-	End Function
+	End Sub
 
 	''' <summary>
 	''' Deletes the associated INI-File from the hard drive.
@@ -437,6 +404,16 @@ Public Class INIFile
 		End If
 
 		File.Delete(curPath)
+
+	End Sub
+
+	''' <summary>
+	''' Clears all data from the INI-File object.
+	''' </summary>
+	''' <remarks></remarks>
+	Public Sub Clear()
+
+		groupArray = {}
 
 	End Sub
 
