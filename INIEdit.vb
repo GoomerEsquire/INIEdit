@@ -117,6 +117,26 @@ Public Class INIFile
 		curPath = path
 	End Sub
 
+	''' <summary>
+	''' Creates a new INIFile object.
+	''' </summary>
+	''' <param name="path">The path to the INI-File.</param>
+	''' <param name="encoding">The encoding of the file read/written.</param>
+	''' <remarks></remarks>
+	Public Sub New(path As String, encoding As System.Text.Encoding)
+		curPath = path
+		enc = encoding
+	End Sub
+
+	''' <summary>
+	''' Creates a new INIFile object.
+	''' </summary>
+	''' <param name="encoding">The encoding of the data passed.</param>
+	''' <remarks></remarks>
+	Public Sub New(encoding As System.Text.Encoding)
+		enc = encoding
+	End Sub
+
 	Private Function isGroup(Line As String) As Boolean
 
 		If Line.Length > 1 AndAlso Line(0) = "[" And Line(Line.Length - 1) = "]" Then
@@ -243,14 +263,15 @@ Public Class INIFile
 	''' <remarks></remarks>
 	Public Function GetGroups() As String()
 
-		Dim TempGroups() As String = {}
+		Dim newArray As String() = {}
 
 		For Each groupObj As Group In groupArray
-			Array.Resize(TempGroups, TempGroups.Count + 1)
-			TempGroups(TempGroups.Count - 1) = groupObj.Name
+			If groupObj.GetKeys.Count = 0 Then Continue For
+			Array.Resize(newArray, newArray.Count + 1)
+			newArray(newArray.Count - 1) = groupObj.Name
 		Next
 
-		Return TempGroups
+		Return newArray
 
 	End Function
 
@@ -271,9 +292,10 @@ Public Class INIFile
 		Dim groupObj As Group = GetGroup(Group)
 
 		If Not groupObj Is Nothing Then
-			For Each k As Key In groupObj.GetKeys
-				Array.Resize(newArray, newArray.Count + 1)
-				newArray(newArray.Count - 1) = k.Name
+			Dim keys As Key() = groupObj.GetKeys
+			Array.Resize(newArray, keys.Count - 1)
+			For i As Integer = 0 To keys.Count - 1
+				newArray(i) = keys(i).Name
 			Next
 		End If
 
@@ -433,18 +455,13 @@ Public Class INIFile
 	End Property
 
 	''' <summary>
-	''' Gets or sets the encoding of the INIFile object.
+	''' Gets the encoding of the INIFile object.
 	''' </summary>
-	''' <value>A system.text.encoding object.</value>
 	''' <returns>A system.text.encoding object.</returns>
-	''' <remarks>Default is UTF8.</remarks>
-	Public Property FileEncoding As System.Text.Encoding
+	Public ReadOnly Property FileEncoding As System.Text.Encoding
 		Get
 			Return enc
 		End Get
-		Set(value As System.Text.Encoding)
-			enc = value
-		End Set
 	End Property
 
 End Class
