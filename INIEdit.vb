@@ -111,6 +111,13 @@ Public Class INIFile
 	''' <summary>
 	''' Creates a new INIFile object.
 	''' </summary>
+	''' <remarks></remarks>
+	Public Sub New()
+	End Sub
+
+	''' <summary>
+	''' Creates a new INIFile object.
+	''' </summary>
 	''' <param name="path">The path to the INI-File.</param>
 	''' <remarks></remarks>
 	Public Sub New(path As String)
@@ -293,7 +300,7 @@ Public Class INIFile
 
 		If Not groupObj Is Nothing Then
 			Dim keys As Key() = groupObj.GetKeys
-			Array.Resize(newArray, keys.Count - 1)
+			Array.Resize(newArray, keys.Count)
 			For i As Integer = 0 To keys.Count - 1
 				newArray(i) = keys(i).Name
 			Next
