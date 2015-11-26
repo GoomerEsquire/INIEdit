@@ -52,10 +52,10 @@ Public Class INIFile
 
 			Dim newArray As Key() = {}
 
-			For Each k As Key In keyArray
-				If k Is Nothing Then Continue For
+			For Each keyObj As Key In keyArray
+				If keyObj Is Nothing Then Continue For
 				Array.Resize(newArray, newArray.Count + 1)
-				newArray(newArray.Count - 1) = k
+				newArray(newArray.Count - 1) = keyObj
 			Next
 
 			Return newArray
@@ -187,20 +187,15 @@ Public Class INIFile
 	Private Function toINI() As String
 
 		Dim NewConfingString As String = ""
-		Dim first As Boolean = True
 
-		For Each grp As Group In groupArray
-			Dim keys As Key() = grp.GetKeys
-			If keys.Count = 0 Then Continue For
-			If Not first Then
-				NewConfingString += vbCrLf
-			Else
-				first = False
-			End If
-			NewConfingString += "[" + grp.Name + "]" + vbCrLf
-			For Each k As Key In keys
-				NewConfingString += k.Name + "=" + k.Value + vbCrLf
+		For Each groupObj As Group In groupArray
+			Dim keyArray As Key() = groupObj.GetKeys
+			If keyArray.Count = 0 Then Continue For
+			NewConfingString += "[" + groupObj.Name + "]" + vbCrLf
+			For Each keyObj As Key In keyArray
+				NewConfingString += keyObj.Name + "=" + keyObj.Value + vbCrLf
 			Next
+			NewConfingString += vbCrLf
 		Next
 
 		Return NewConfingString
@@ -314,25 +309,25 @@ Public Class INIFile
 	''' Returns a value from a group and key.
 	''' </summary>
 	''' <param name="Group">The group from which the key and value is to be read.</param>
-	''' <param name="KeyName">The key from which the value is to be read.</param>
+	''' <param name="Key">The key from which the value is to be read.</param>
 	''' <param name="DefaultValue">Default value to return if the key or group do not exist.</param>
 	''' <returns>A string value.</returns>
 	''' <remarks>Will throw an exception if the group string is empty or null.</remarks>
-	Public Function GetVal(Group As String, KeyName As String, Optional DefaultValue As String = Nothing) As String
+	Public Function GetVal(Group As String, Key As String, Optional DefaultValue As String = Nothing) As String
 
 		If Group Is Nothing OrElse Group.Length = 0 Then
 			Throw New NullReferenceException("Group string cannot be null or empty!")
 			Exit Function
 		End If
 
-		If KeyName = Nothing OrElse KeyName.Length = 0 Then
+		If Key = Nothing OrElse Key.Length = 0 Then
 			Throw New NullReferenceException("Key string cannot be null or empty!")
 			Exit Function
 		End If
 
 		Dim groupObj As Group = GetGroup(Group)
 		If Not groupObj Is Nothing Then
-			Dim keyObj As Key = groupObj.GetKey(KeyName)
+			Dim keyObj As Key = groupObj.GetKey(Key)
 			If Not keyObj Is Nothing Then
 				Return keyObj.Value
 			End If
@@ -346,22 +341,22 @@ Public Class INIFile
 	''' Creates or overwrites a new value.
 	''' </summary>
 	''' <param name="Group">The group in which the key and value is to be saved.</param>
-	''' <param name="KeyName">The key in which the value is to be saved.</param>
+	''' <param name="Key">The key in which the value is to be saved.</param>
 	''' <param name="NewValue">The value that is to be saved.</param>
 	''' <remarks>Will throw an exception if the group string is empty or null.</remarks>
-	Public Sub SetVal(Group As String, KeyName As String, NewValue As String)
+	Public Sub SetVal(Group As String, Key As String, NewValue As String)
 
 		If Group = Nothing OrElse Group.Length = 0 Then
 			Throw New NullReferenceException("Group string cannot be null or empty!")
 			Exit Sub
 		End If
 
-		If KeyName = Nothing OrElse KeyName.Length = 0 Then
+		If Key = Nothing OrElse Key.Length = 0 Then
 			Throw New NullReferenceException("Key string cannot be null or empty!")
 			Exit Sub
 		End If
 
-		GetGroup(Group, True).GetKey(KeyName, True).Value = NewValue
+		GetGroup(Group, True).GetKey(Key, True).Value = NewValue
 
 		If AutoSave Then Save()
 
@@ -371,16 +366,16 @@ Public Class INIFile
 	''' Removes a key and its value.
 	''' </summary>
 	''' <param name="Group">The group from which the key is to be removed.</param>
-	''' <param name="KeyName">The key that is to be removed.</param>
+	''' <param name="Key">The key that is to be removed.</param>
 	''' <remarks>Will throw an exception if the group string is empty or null.</remarks>
-	Public Sub RemoveVal(Group As String, KeyName As String)
+	Public Sub RemoveVal(Group As String, Key As String)
 
 		If Group = Nothing OrElse Group.Length = 0 Then
 			Throw New NullReferenceException("Group string cannot be null or empty!")
 			Exit Sub
 		End If
 
-		If KeyName = Nothing OrElse KeyName.Length = 0 Then
+		If Key = Nothing OrElse Key.Length = 0 Then
 			Throw New NullReferenceException("Key string cannot be null or empty!")
 			Exit Sub
 		End If
@@ -388,7 +383,7 @@ Public Class INIFile
 		Dim groupObj As Group = GetGroup(Group)
 
 		If Not groupObj Is Nothing Then
-			groupObj.RemoveKey(KeyName)
+			groupObj.RemoveKey(Key)
 			If AutoSave Then Save()
 		End If
 
