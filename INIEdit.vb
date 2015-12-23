@@ -215,11 +215,12 @@ Public Class INIFile
 		Dim newString As New StringBuilder
 
 		For g As Integer = 0 To groupArray.Count - 1
-			If groupArray(g).AllKeys.Count = 0 Then Continue For
+			Dim keys As Key() = groupArray(g).GetKeys
+			If keys.Count = 0 Then Continue For
 			If g > 0 Then newString.AppendLine()
 			newString.AppendLine("[" + groupArray(g).Name + "]")
-			For k As Integer = 0 To groupArray(g).AllKeys.Count - 1
-				newString.AppendLine(groupArray(g).AllKeys(k).ToString)
+			For k As Integer = 0 To keys.Count - 1
+				newString.AppendLine(keys(k).ToString)
 			Next
 		Next
 
