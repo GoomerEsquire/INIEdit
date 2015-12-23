@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports System.Text
 
 Public Class INIFile
 
@@ -11,13 +12,17 @@ Public Class INIFile
 			n = name
 		End Sub
 
-		Public ReadOnly Property Name As String
+		Public Overrides Function ToString() As String
+			Return n
+		End Function
+
+		Friend ReadOnly Property Name As String
 			Get
 				Return n
 			End Get
 		End Property
 
-		Public Function GetKey(name As String, Optional create As Boolean = False) As Key
+		Friend Function GetKey(name As String, Optional create As Boolean = False) As Key
 
 			Dim keyObj As Key = Nothing
 			Dim lname As String = LCase(name)
@@ -35,7 +40,7 @@ Public Class INIFile
 			Next
 
 			If create AndAlso keyObj Is Nothing Then
-				keyObj = New Key(name)
+				keyObj = New Key(Me, name)
 				If empty > -1 Then
 					keyArray(empty) = keyObj
 				Else
@@ -48,33 +53,33 @@ Public Class INIFile
 
 		End Function
 
-		Public Function GetKeys() As Key()
+		Friend Function GetKeys() As Key()
 
-			Dim newArray As Key() = {}
+			Dim count As Integer = 0
 
 			For Each keyObj As Key In keyArray
 				If keyObj Is Nothing Then Continue For
-				Array.Resize(newArray, newArray.Count + 1)
-				newArray(newArray.Count - 1) = keyObj
+				count += 1
+			Next
+
+			Dim newArray(count - 1) As Key
+			count = 0
+
+			For Each keyObj As Key In keyArray
+				If keyObj Is Nothing Then Continue For
+				newArray(count) = keyObj
+				count += 1
 			Next
 
 			Return newArray
 
 		End Function
 
-		Public Sub RemoveKey(name As String)
-
-			name = LCase(name)
-
-			For i As Integer = 0 To keyArray.Count - 1
-				If keyArray(i) Is Nothing Then Continue For
-				If LCase(keyArray(i).Name) = name Then
-					keyArray(i) = Nothing
-					Exit For
-				End If
-			Next
-
-		End Sub
+		Friend ReadOnly Property AllKeys As Key()
+			Get
+				Return keyArray
+			End Get
+		End Property
 
 	End Class
 
@@ -82,17 +87,30 @@ Public Class INIFile
 
 		Protected n As String
 		Protected v As String = String.Empty
-		Sub New(name As String)
+		Protected g As Group
+
+		Sub New(group As Group, name As String)
+			g = group
 			n = name
 		End Sub
 
-		Public ReadOnly Property Name As String
+		Public Overrides Function ToString() As String
+			Return n + "=" + v
+		End Function
+
+		Friend ReadOnly Property Name As String
 			Get
 				Return n
 			End Get
 		End Property
 
-		Public Property Value As String
+		Friend ReadOnly Property Group As Group
+			Get
+				Return g
+			End Get
+		End Property
+
+		Friend Property Value As String
 			Get
 				Return v
 			End Get
@@ -100,6 +118,18 @@ Public Class INIFile
 				v = value
 			End Set
 		End Property
+
+		Friend Sub Remove()
+
+			For i As Integer = 0 To g.AllKeys.Count - 1
+				If g.AllKeys(i) Is Nothing Then Continue For
+				If g.AllKeys(i) Is Me Then
+					g.AllKeys(i) = Nothing
+					Exit For
+				End If
+			Next
+
+		End Sub
 
 	End Class
 
@@ -111,7 +141,6 @@ Public Class INIFile
 	''' <summary>
 	''' Creates a new INIFile object.
 	''' </summary>
-	''' <remarks></remarks>
 	Public Sub New()
 	End Sub
 
@@ -119,7 +148,6 @@ Public Class INIFile
 	''' Creates a new INIFile object.
 	''' </summary>
 	''' <param name="path">The path to the INI-File.</param>
-	''' <remarks></remarks>
 	Public Sub New(path As String)
 		curPath = path
 	End Sub
@@ -129,7 +157,6 @@ Public Class INIFile
 	''' </summary>
 	''' <param name="path">The path to the INI-File.</param>
 	''' <param name="encoding">The encoding of the file read/written.</param>
-	''' <remarks></remarks>
 	Public Sub New(path As String, encoding As System.Text.Encoding)
 		curPath = path
 		enc = encoding
@@ -139,7 +166,6 @@ Public Class INIFile
 	''' Creates a new INIFile object.
 	''' </summary>
 	''' <param name="encoding">The encoding of the data passed.</param>
-	''' <remarks></remarks>
 	Public Sub New(encoding As System.Text.Encoding)
 		enc = encoding
 	End Sub
@@ -186,36 +212,36 @@ Public Class INIFile
 
 	Private Function toINI() As String
 
-		Dim NewConfingString As String = ""
+		Dim newString As New StringBuilder
 
-		For Each groupObj As Group In groupArray
-			Dim keyArray As Key() = groupObj.GetKeys
-			If keyArray.Count = 0 Then Continue For
-			NewConfingString += "[" + groupObj.Name + "]" + vbCrLf
-			For Each keyObj As Key In keyArray
-				NewConfingString += keyObj.Name + "=" + keyObj.Value + vbCrLf
+		For g As Integer = 0 To groupArray.Count - 1
+			If groupArray(g).AllKeys.Count = 0 Then Continue For
+			If g > 0 Then newString.AppendLine()
+			newString.AppendLine("[" + groupArray(g).Name + "]")
+			For k As Integer = 0 To groupArray(g).AllKeys.Count - 1
+				newString.AppendLine(groupArray(g).AllKeys(k).ToString)
 			Next
-			NewConfingString += vbCrLf
 		Next
 
-		Return NewConfingString
+		Return newString.ToString
 
 	End Function
 
 	''' <summary>
-	''' Converts an INI-File to use with this library.
+	''' Converts the string from the specified file path in INI format to use with this library.
 	''' </summary>
-	''' <remarks></remarks>
-	Public Sub ReadFile()
+	Public Overloads Sub Read()
 
-		Dim confFile As String = ""
-		Dim curGroup As String = ""
-
-		If File.Exists(curPath) Then
-			confFile = File.ReadAllText(curPath, enc)
+		If curPath.Length = 0 Then
+			Throw New InvalidOperationException("Filepath was not specified!")
+			Exit Sub
 		End If
 
-		For Each ConfLine As String In Split(confFile, vbCrLf)
+		Dim data As String = File.ReadAllText(curPath, enc)
+
+		Dim curGroup As String = ""
+
+		For Each ConfLine As String In Split(data, vbCrLf)
 			If ConfLine.Length = 0 Then Continue For
 			If ConfLine.StartsWith("#") OrElse ConfLine.StartsWith(";") OrElse ConfLine.StartsWith("//") Then
 				Continue For
@@ -232,12 +258,8 @@ Public Class INIFile
 
 	End Sub
 
-	''' <summary>
-	''' Converts a string in INI format to use with this library.
-	''' </summary>
-	''' <param name="data">The data to convert.</param>
-	''' <remarks></remarks>
-	Public Sub SetData(data As String)
+	''' <param name="data">Convert this string instead.</param>
+	Public Overloads Sub Read(data As String)
 
 		Dim curGroup As String = ""
 
@@ -262,15 +284,22 @@ Public Class INIFile
 	''' Returns all groups.
 	''' </summary>
 	''' <returns>An array of string.</returns>
-	''' <remarks></remarks>
 	Public Function GetGroups() As String()
 
-		Dim newArray As String() = {}
+		Dim count As Integer = 0
 
 		For Each groupObj As Group In groupArray
 			If groupObj.GetKeys.Count = 0 Then Continue For
-			Array.Resize(newArray, newArray.Count + 1)
-			newArray(newArray.Count - 1) = groupObj.Name
+			count += 1
+		Next
+
+		Dim newArray(count - 1) As String
+		count = 0
+
+		For Each groupObj As Group In groupArray
+			If groupObj.GetKeys.Count = 0 Then Continue For
+			newArray(count) = groupObj.Name
+			count += 1
 		Next
 
 		Return newArray
@@ -286,7 +315,7 @@ Public Class INIFile
 	Public Function GetKeys(Group As String) As String()
 
 		If Group Is Nothing OrElse Group.Length = 0 Then
-			Throw New NullReferenceException("Group string cannot be null or empty!")
+			Throw New ArgumentNullException("Group string cannot be null or empty!")
 			Exit Function
 		End If
 
@@ -316,12 +345,12 @@ Public Class INIFile
 	Public Function GetVal(Group As String, Key As String, Optional DefaultValue As String = Nothing) As String
 
 		If Group Is Nothing OrElse Group.Length = 0 Then
-			Throw New NullReferenceException("Group string cannot be null or empty!")
+			Throw New ArgumentNullException("Group string cannot be null or empty!")
 			Exit Function
 		End If
 
 		If Key = Nothing OrElse Key.Length = 0 Then
-			Throw New NullReferenceException("Key string cannot be null or empty!")
+			Throw New ArgumentNullException("Key string cannot be null or empty!")
 			Exit Function
 		End If
 
@@ -347,12 +376,12 @@ Public Class INIFile
 	Public Sub SetVal(Group As String, Key As String, NewValue As String)
 
 		If Group = Nothing OrElse Group.Length = 0 Then
-			Throw New NullReferenceException("Group string cannot be null or empty!")
+			Throw New ArgumentNullException("Group string cannot be null or empty!")
 			Exit Sub
 		End If
 
 		If Key = Nothing OrElse Key.Length = 0 Then
-			Throw New NullReferenceException("Key string cannot be null or empty!")
+			Throw New ArgumentNullException("Key string cannot be null or empty!")
 			Exit Sub
 		End If
 
@@ -371,20 +400,23 @@ Public Class INIFile
 	Public Sub RemoveVal(Group As String, Key As String)
 
 		If Group = Nothing OrElse Group.Length = 0 Then
-			Throw New NullReferenceException("Group string cannot be null or empty!")
+			Throw New ArgumentNullException("Group string cannot be null or empty!")
 			Exit Sub
 		End If
 
 		If Key = Nothing OrElse Key.Length = 0 Then
-			Throw New NullReferenceException("Key string cannot be null or empty!")
+			Throw New ArgumentNullException("Key string cannot be null or empty!")
 			Exit Sub
 		End If
 
 		Dim groupObj As Group = GetGroup(Group)
 
 		If Not groupObj Is Nothing Then
-			groupObj.RemoveKey(Key)
-			If AutoSave Then Save()
+			Dim keyObj As Key = groupObj.GetKey(Key)
+			If Not keyObj Is Nothing Then
+				keyObj.Remove()
+				If AutoSave Then Save()
+			End If
 		End If
 
 	End Sub
@@ -410,7 +442,8 @@ Public Class INIFile
 	Public Sub Save()
 
 		If curPath.Length = 0 Then
-			Throw New NullReferenceException("Cannot save file without filepath!")
+			Throw New InvalidOperationException("Filepath was not specified!")
+			Exit Sub
 		End If
 
 		File.WriteAllText(curPath, toINI, enc)
@@ -424,7 +457,8 @@ Public Class INIFile
 	Public Sub Delete()
 
 		If curPath.Length = 0 Then
-			Throw New NullReferenceException("Cannot delete file without filepath!")
+			Throw New InvalidOperationException("Filepath was not specified!")
+			Exit Sub
 		End If
 
 		File.Delete(curPath)
