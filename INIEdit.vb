@@ -235,7 +235,7 @@ Public Class INIFile
 
 		If curPath.Length = 0 Then
 			Throw New InvalidOperationException("Filepath was not specified!")
-			Exit Sub
+			Return
 		End If
 
 		Dim data As String = File.ReadAllText(curPath, enc)
@@ -378,12 +378,12 @@ Public Class INIFile
 
 		If Group = Nothing OrElse Group.Length = 0 Then
 			Throw New ArgumentNullException("Group string cannot be null or empty!")
-			Exit Sub
+			Return
 		End If
 
 		If Key = Nothing OrElse Key.Length = 0 Then
 			Throw New ArgumentNullException("Key string cannot be null or empty!")
-			Exit Sub
+			Return
 		End If
 
 		GetGroup(Group, True).GetKey(Key, True).Value = NewValue
@@ -402,16 +402,15 @@ Public Class INIFile
 
 		If Group = Nothing OrElse Group.Length = 0 Then
 			Throw New ArgumentNullException("Group string cannot be null or empty!")
-			Exit Sub
+			Return
 		End If
 
 		If Key = Nothing OrElse Key.Length = 0 Then
 			Throw New ArgumentNullException("Key string cannot be null or empty!")
-			Exit Sub
+			Return
 		End If
 
 		Dim groupObj As Group = GetGroup(Group)
-
 		If Not groupObj Is Nothing Then
 			Dim keyObj As Key = groupObj.GetKey(Key)
 			If Not keyObj Is Nothing Then
@@ -444,7 +443,7 @@ Public Class INIFile
 
 		If curPath.Length = 0 Then
 			Throw New InvalidOperationException("Filepath was not specified!")
-			Exit Sub
+			Return
 		End If
 
 		File.WriteAllText(curPath, toINI, enc)
@@ -459,7 +458,7 @@ Public Class INIFile
 
 		If curPath.Length = 0 Then
 			Throw New InvalidOperationException("Filepath was not specified!")
-			Exit Sub
+			Return
 		End If
 
 		File.Delete(curPath)
