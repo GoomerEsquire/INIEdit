@@ -1,5 +1,6 @@
 ﻿Imports System.IO
 Imports System.Text
+Imports System.Runtime.CompilerServices
 
 Public Class INIFile
 
@@ -24,32 +25,31 @@ Public Class INIFile
 
 		Friend Function GetKey(name As String, Optional create As Boolean = False) As Key
 
-			Dim keyObj As Key = Nothing
 			Dim lname As String = LCase(name)
-			Dim empty As Integer = -1
+			Dim index As Integer = -1
+			Dim notFound As Boolean = False
 
 			For i As Integer = 0 To keyArray.Count - 1
 				If keyArray(i) Is Nothing Then
-					If empty = -1 Then empty = i
-					Continue For
-				End If
-				If LCase(keyArray(i).Name) = lname Then
-					keyObj = keyArray(i)
+					index = i
+					notFound = True
+					Exit For
+				ElseIf LCase(keyArray(i).Name) = lname Then
+					index = i
 					Exit For
 				End If
 			Next
 
-			If create AndAlso keyObj Is Nothing Then
-				keyObj = New Key(Me, name)
-				If empty > -1 Then
-					keyArray(empty) = keyObj
-				Else
+			If create AndAlso notFound Then
+				Dim keyObj As New Key(Me, name)
+				If index = -1 Then
 					Array.Resize(keyArray, keyArray.Count + 1)
-					keyArray(keyArray.Count - 1) = keyObj
+					index = keyArray.Count - 1
 				End If
+				keyArray(index) = keyObj
 			End If
 
-			Return keyObj
+			Return keyArray(index)
 
 		End Function
 
@@ -58,7 +58,7 @@ Public Class INIFile
 			Dim count As Integer = 0
 
 			For Each keyObj As Key In keyArray
-				If keyObj Is Nothing Then Continue For
+				If keyObj Is Nothing Then Exit For
 				count += 1
 			Next
 
@@ -66,7 +66,7 @@ Public Class INIFile
 			count = 0
 
 			For Each keyObj As Key In keyArray
-				If keyObj Is Nothing Then Continue For
+				If keyObj Is Nothing Then Exit For
 				newArray(count) = keyObj
 				count += 1
 			Next
@@ -122,9 +122,10 @@ Public Class INIFile
 		Friend Sub Remove()
 
 			For i As Integer = 0 To g.AllKeys.Count - 1
-				If g.AllKeys(i) Is Nothing Then Continue For
+				If g.AllKeys(i) Is Nothing Then Exit For
 				If g.AllKeys(i) Is Me Then
 					g.AllKeys(i) = Nothing
+					g.AllKeys.Move(i, g.AllKeys.Count - 1)
 					Exit For
 				End If
 			Next
@@ -501,3 +502,25 @@ Public Class INIFile
 	End Property
 
 End Class
+
+<HideModuleName> Module Extensions
+
+	<Extension> Public Function Move(Of T)(ByRef a As T(), source As Integer, destination As Integer) As Boolean
+
+		Dim sourceItem As T = a(source)
+
+		If source < destination Then
+			Array.ConstrainedCopy(a, source + 1, a, source, destination - source)
+			a(destination) = sourceItem
+		ElseIf source > destination Then
+			Array.ConstrainedCopy(a, destination, a, destination + 1, source - destination)
+			a(destination) = sourceItem
+		Else
+			Return False
+		End If
+
+		Return True
+
+	End Function
+
+End Module
