@@ -27,33 +27,27 @@ Public Class INIFile
 
 			Dim lname As String = LCase(name)
 			Dim index As Integer = -1
-			Dim notFound As Boolean = False
 
 			For i As Integer = 0 To keyArray.Count - 1
 				If keyArray(i) Is Nothing Then
 					index = i
-					notFound = True
 					Exit For
 				ElseIf LCase(keyArray(i).Name) = lname Then
-					index = i
-					Exit For
+					Return keyArray(i)
 				End If
 			Next
 
-			If create AndAlso (notFound OrElse index = -1) Then
+			If create Then
 				Dim keyObj As New Key(Me, name)
 				If index = -1 Then
 					Array.Resize(keyArray, keyArray.Count + 1)
 					index = keyArray.Count - 1
 				End If
 				keyArray(index) = keyObj
+				Return keyObj
 			End If
 
-			If index = -1 Then
-				Return Nothing
-			Else
-				Return keyArray(index)
-			End If
+			Return Nothing
 
 		End Function
 
