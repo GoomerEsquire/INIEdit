@@ -40,7 +40,7 @@ Public Class INIFile
 				End If
 			Next
 
-			If create AndAlso notFound Then
+			If create AndAlso (notFound OrElse index = -1) Then
 				Dim keyObj As New Key(Me, name)
 				If index = -1 Then
 					Array.Resize(keyArray, keyArray.Count + 1)
@@ -49,7 +49,11 @@ Public Class INIFile
 				keyArray(index) = keyObj
 			End If
 
-			Return keyArray(index)
+			If index = -1 Then
+				Return Nothing
+			Else
+				Return keyArray(index)
+			End If
 
 		End Function
 
