@@ -314,7 +314,7 @@ Public Class INIFile
 	''' <remarks>Will throw an exception if the group string is empty or null.</remarks>
 	Public Function GetKeys(Group As String) As String()
 
-		If Group Is Nothing OrElse Group.Length = 0 Then
+		If Group = Nothing OrElse Group.Length = 0 Then
 			Throw New ArgumentNullException("Group string cannot be null or empty!")
 			Exit Function
 		End If
@@ -344,7 +344,7 @@ Public Class INIFile
 	''' <remarks>Will throw an exception if the group string is empty or null.</remarks>
 	Public Function GetVal(Group As String, Key As String, Optional DefaultValue As String = Nothing) As String
 
-		If Group Is Nothing OrElse Group.Length = 0 Then
+		If Group = Nothing OrElse Group.Length = 0 Then
 			Throw New ArgumentNullException("Group string cannot be null or empty!")
 			Exit Function
 		End If
@@ -440,7 +440,7 @@ Public Class INIFile
 	''' <remarks></remarks>
 	Public Sub Save()
 
-		If curPath.Length = 0 Then
+		If curPath = Nothing OrElse curPath.Length = 0 Then
 			Throw New InvalidOperationException("Filepath was not specified!")
 			Return
 		End If
@@ -455,7 +455,7 @@ Public Class INIFile
 	''' <remarks></remarks>
 	Public Sub Delete()
 
-		If curPath.Length = 0 Then
+		If curPath = Nothing OrElse curPath.Length = 0 Then
 			Throw New InvalidOperationException("Filepath was not specified!")
 			Return
 		End If
